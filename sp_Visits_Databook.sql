@@ -80,7 +80,7 @@ select DISTINCT
 	end pat_state
 into #pats
 FROM MosaiqAdmin.dbo.Visits_in_Buckets vis
-left join Mosaiq.dbo.Admin adm on vis.pat_id1 = adm.pat_id1
+left join MosaiqAdmin.dbo.RefStaging_Admin adm on vis.pat_id1 = adm.pat_id1
 WHERE FY in (@fiscal_year) 
 --and appt_dt < 'yyyymmdd'  --add this for preliminary data
 
