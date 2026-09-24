@@ -9,20 +9,23 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-
-
-CREATE procedure [dbo].[sp_Visits_Databook]
+CREATE PROCEDURE [dbo].[sp_Visits_Databook]
 AS
 
 BEGIN
---*****UOP & DATABOOK:	Data Book must be locked same day as UOP data.  UOP data is a subset of Databook data.******
+-- UOP & DATABOOK:	Data Book must be locked same day as UOP data.  
 --
 /************************ CREATE the details table *********************/
---DO NOT DELETE THE LOCKED DETAIL TABLE AFTER THE NUMBERS HAVE BEEN SUPPLIED TO MARLENA OR RAE ANN PADEN--
-----------------PRIOR TO DELIVERY, YOU CAN DELETE AND RECREATE THE TABLE AS NEEDED------------------------
+--DO NOT DELETE THE LOCKED DETAIL TABLE AFTER THE NUMBERS 
+-- HAVE BEEN SUPPLIED TO MARLENA OR RAE ANN PADEN
+---PRIOR TO DELIVERY, YOU CAN DELETE AND RECREATE THE TABLE AS NEEDED---
 
---replace 'fiscal_year' in the table name on the line below with the 4-digit fiscal year
---if you are providing preliminary data and want to freeze that, rename the table something like Visits_Databook_dtls_[fiscal_year]_Prelim__LOCKED
+--replace 'fiscal_year' in the table name on the line below with 
+-- the 4-digit fiscal year
+
+--if you are providing preliminary data and want to freeze that, 
+-- rename the table something like 
+-- Visits_Databook_dtls_[fiscal_year]_Prelim__LOCKED
 
 CREATE TABLE Visits_Databook_dtls_fiscal_year_LOCKED(
 	[FY] [varchar](4) NOT NULL,
@@ -48,8 +51,8 @@ CREATE TABLE Visits_Databook_dtls_fiscal_year_LOCKED(
 	[Lock_dtTm] [datetime] NULL
 ) ON [PRIMARY]
 
-/*************** DECLARE & SET the @fiscal_year varible to the 4-digit fiscal year value ****************/
-   ------------------ highlight and execute the declaration plus all of the 1st query ------------------- 
+/** DECLARE & SET the @fiscal_year varible to the 4-digit fiscal year value */
+-- highlight and execute the declaration plus all of the 1st query - 
 
 DECLARE @fiscal_year as smallint;
 SET @fiscal_year = 1111;   --reset this variable to the correct 4-digit fiscal year
@@ -126,10 +129,10 @@ from (
 select count(*) from #pats
 select count(*) from #pats_county
 
-/*************** DECLARE & SET the @fisc_year varible to the 4-digit fiscal year value ****************/
-   ------------------ highlight and execute the declaration plus all of the 3rd query ------------------- 
+/** DECLARE & SET the @fisc_year varible to the 4-digit fiscal year value ***/
+----- highlight and execute the declaration plus all of the 3rd query 
 DECLARE @fisc_year as smallint;
-SET @fisc_year = 1111;   --reset this variable to the correct 4-digit fiscal year
+SET @fisc_year = 1111; --reset this variable to the correct 4-digit fiscal year
 
 ---3rd QUERY---
 -- drop table #data
@@ -170,13 +173,26 @@ select
 	#pats_County.pat_postal,
 	GetDate() as Lock_DtTm
 into #data
-from MosaiqAdmin.dbo.Visits_in_Buckets vis
+FROM MosaiqAdmin.dbo.Visits_in_Buckets vis
 left join #pats_County on vis.pat_id1 = #pats_county.pat_id1
 where vis.visit_bucket in ('Clinic Procedure', 'Infusion', 'Machine Only Procedure',  'Medical Support', 'Physician/APP', 'PFSS', 'Shot Clinic')
 and vis.Seq_Pat_Appts_Per_Day_by_Group = 1  -- patient with multiple appts with same provider in same day will count as 1 visit; patient with multiple appts scheduled to RO machines in same day will count as 1 visit
 and vis.fy in (@fisc_year)
 --and appt_dt < 'yyyymmdd'  --add this for preliminary data
 
-/*************** LOAD THE DETAIL DATA FROM #data INTO THE LOCKED FISCAL YEAR TABLE CREATED ABOVE ****************/
--- rename the table being inserted into to the same name as the table created in this stored procedure's 1st step --
+/**** LOAD THE DETAIL DATA FROM #data INTO THE LOCKED FISCAL YEAR TABLE CREATED ABOVE *****/
+-- rename the table being inserted into to the same name as the table created in 
+-- this stored procedure's 1st step --
 -- highlight and execute the INSERT INTO/SELECT statement
+INSERT INTO dbo.Visits_Databook_dtls_fiscal_year_LOCKED  
+SELECT * from #data
+
+--the #data and dbo.Visits_Databook_dtls_[fiscal_year]_LOCKED tables should have the same number of rows
+select count(*) from #data
+select count(*) from dbo.Visits_Databook_dtls_fiscal_year_LOCKED
+
+
+/*************** DO NOT EXECUTE THE STORED PROCEDURE ****************/
+/*** Close the query window so that the table name and fiscal year variable values are not retained ***/
+
+END
